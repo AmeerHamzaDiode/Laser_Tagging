@@ -30,15 +30,12 @@ The system uses **WebSocket communication** for ultra-low latency data transfer 
 
 ### 📸 Project Showcase
 ![Image](https://github.com/user-attachments/assets/d20bfe5c-3e59-453f-b5cb-c78c1983bb0a)
+![Image](https://github.com/user-attachments/assets/ae89eb21-9c34-4452-9875-a0571bfef2a5)
+![Image](https://github.com/user-attachments/assets/680278ce-f5cd-43fe-82d8-0fcf248efa77)
+![Image](https://github.com/user-attachments/assets/64ff618d-27a2-4648-b03e-4733c0d22e9c)
 ---
 
-### 📁 Folder Structure:
-```
-/hardware         # ESP32 firmware code  
-/flow             # Node-RED flow export  
-/assets           # Images or circuit diagrams  
-README.md
-```
+
 
 ---
 
