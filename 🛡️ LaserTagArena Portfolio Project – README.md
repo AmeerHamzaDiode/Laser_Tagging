@@ -47,6 +47,6 @@ The system uses **WebSocket communication** for ultra-low latency data transfer 
 
 ---
 
-### 🔗 GitHub Link (Once repo is ready):
-> [GitHub – LaserTagArena 🔗]([https://github.com/your-username/LaserTagArena](https://github.com/AmeerHamzaDiode/Laser_Tagging))
+### 🔗 GitHub Link:
+> [GitHub – LaserTagArena 🔗](https://github.com/AmeerHamzaDiode/Laser_Tagging)
 
