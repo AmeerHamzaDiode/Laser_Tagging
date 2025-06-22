@@ -29,7 +29,7 @@ The system uses **WebSocket communication** for ultra-low latency data transfer 
 ---
 
 ### 📸 Project Showcase
-
+![Image](https://github.com/user-attachments/assets/d20bfe5c-3e59-453f-b5cb-c78c1983bb0a)
 ---
 
 ### 📁 Folder Structure:
