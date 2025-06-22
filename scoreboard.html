@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoreboard</title>
+<style>
+/* General Styling */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: url('./game-background.jpg') no-repeat center center fixed;
+    background-size: cover; /* Ensures the image covers the entire background */
+    color: #ecf0f1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    
+    /* Shrink the entire page to 80% */
+    transform: scale(0.8);
+    transform-origin: top center;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+h1 {
+    margin-bottom: 20px;
+    font-size: 36px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    color: #f39c12;
+}
+
+#timer {
+    font-size: 28px;
+    font-weight: bold;
+    color: #f1c40f;
+    margin-bottom: 20px;
+}
+
+/* Add Flexbox Gap for spacing between the team tables */
+.team-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px 0;
+    gap: 30px; /* Added gap here */
+}
+
+table {
+    width: 40%;
+    border-collapse: collapse;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+thead th {
+    background: linear-gradient(to right, #e74c3c, #c0392b);
+    color: white;
+    padding: 15px 0;
+    font-size: 28px;
+}
+
+.blue-team thead th {
+    background: linear-gradient(to right, #3498db, #2980b9);
+}
+
+tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+td {
+    text-align: center;
+    padding: 18px;
+    border: 1px solid #555;
+    font-size: 22px;
+}
+
+#winner-announcement {
+    margin-top: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+}
+
+#winner-announcement.winner-red {
+    color: #e74c3c;
+}
+
+#winner-announcement.winner-blue {
+    color: #3498db;
+}
+
+#setup-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #16a085;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+}
+
+#setup-button:hover {
+    background-color: #1abc9c;
+}
+
+@media (max-width: 768px) {
+    .team-container {
+        flex-direction: column;
+    }
+
+    table {
+        width: 80%;
+    }
+}
+</style>
+
+</head>
+<body>
+    <h1>Scoreboard</h1>
+    <div id="timer">1:00</div>
+    <div class="team-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody id="red-team-body">
+            </tbody>
+        </table>
+        <table class="blue-team">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody id="blue-team-body">
+            </tbody>
+        </table>
+    </div>
+    <div id="winner-announcement"></div>
+    <a id="setup-button" href="index.html" style="display: none;">Go to Game Setup</a>
+
+<script>
+    let scores = { red: [], blue: [] };
+    let countdownInterval;
+
+    function initializeScoreboard() {
+        const params = new URLSearchParams(window.location.search);
+        const players = JSON.parse(params.get('players') || '{}');
+        const redTeamBody = document.getElementById('red-team-body');
+        const blueTeamBody = document.getElementById('blue-team-body');
+
+        function addRow(teamBody, id, name) {
+            const tr = document.createElement('tr');
+            tr.setAttribute('data-id', id);
+            tr.innerHTML = `<td>${name}</td><td class="score">0</td>`;
+            teamBody.appendChild(tr);
+        }
+
+        if (players.red) {
+            scores.red = players.red.map(player => ({ id: player.id, score: 0 }));
+            players.red.forEach(player => addRow(redTeamBody, player.id, player.name));
+        }
+
+        if (players.blue) {
+            scores.blue = players.blue.map(player => ({ id: player.id, score: 0 }));
+            players.blue.forEach(player => addRow(blueTeamBody, player.id, player.name));
+        }
+    }
+
+    function connectWebSocket() {
+        const ws = new WebSocket('ws://localhost:1880/ws');
+
+        ws.onopen = () => {
+            console.log('WebSocket connected');
+            ws.send(JSON.stringify({ type: 'GameStart' }));
+            startCountdown(1); // Start 15-minute countdown
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                updateScoreboard(data);
+            } catch (error) {
+                console.error('Invalid WebSocket message format:', error);
+            }
+        };
+    }
+
+    function updateScoreboard(data) {
+        const { team, playerNumber, score } = data;
+        const teamKey = team === 'Team Red' ? 'red' : 'blue';
+
+        const player = scores[teamKey].find(p => p.id === playerNumber);
+        if (player) {
+            player.score = score;
+            const teamBody = teamKey === 'red' ? document.getElementById('red-team-body') : document.getElementById('blue-team-body');
+            const row = teamBody.querySelector(`tr[data-id='${playerNumber}']`);
+            if (row) {
+                const scoreCell = row.querySelector('.score');
+                scoreCell.textContent = score;
+            }
+            reorderRows(teamBody, scores[teamKey]);
+        }
+    }
+
+    function reorderRows(teamBody, teamScores) {
+        teamScores.sort((a, b) => b.score - a.score);
+
+        const rows = Array.from(teamBody.querySelectorAll('tr'));
+        rows.sort((a, b) => {
+            const idA = parseInt(a.getAttribute('data-id'), 10);
+            const idB = parseInt(b.getAttribute('data-id'), 10);
+            const scoreA = teamScores.find(player => player.id === idA)?.score || 0;
+            const scoreB = teamScores.find(player => player.id === idB)?.score || 0;
+            return scoreB - scoreA;
+        });
+
+        rows.forEach(row => teamBody.appendChild(row));
+    }
+
+    function startCountdown(durationMinutes) {
+        let remainingTime = durationMinutes * 60;
+        const timerDisplay = document.getElementById('timer');
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            if (remainingTime <= 0) {
+                clearInterval(countdownInterval);
+                calculateWinner(); // Determine and display the winner
+                sendGameEnd(ws); // Send GameEnd message to the server			
+            } else {
+                remainingTime--;
+            }
+        }
+
+        updateTimerDisplay();
+        countdownInterval = setInterval(updateTimerDisplay, 1000);
+    }
+    // Function to send the GameEnd message
+      function sendGameEnd(ws) {
+          if (ws.readyState === WebSocket.OPEN) {
+             ws.send(JSON.stringify({ type: 'GameEnd' })); // Send the GameEnd message
+             console.log('GameEnd message sent to the server');
+           } else {
+            console.error('WebSocket is not connected. GameEnd message not sent.');
+          }
+          }
+
+    function calculateWinner() {
+        const redTotal = scores.red.reduce((sum, player) => sum + player.score, 0);
+        const blueTotal = scores.blue.reduce((sum, player) => sum + player.score, 0);
+
+        const announcement = document.getElementById('winner-announcement');
+        if (redTotal > blueTotal) {
+            announcement.textContent = `Team Red is the Winner! Total Score: ${redTotal} | Team Blue: ${blueTotal}`;
+            announcement.classList.add('winner-red');
+        } else if (blueTotal > redTotal) {
+            announcement.textContent = `Team Blue is the Winner! Total Score: ${blueTotal} | Team Red: ${redTotal}`;
+            announcement.classList.add('winner-blue');
+        } else {
+            announcement.textContent = `It's a Draw! Team Red: ${redTotal}, Team Blue: ${blueTotal}`;
+            announcement.style.color = '#f1c40f';
+        }
+
+        const setupButton = document.createElement('a');
+        setupButton.id = 'setup-button';
+        setupButton.href = 'index.html';
+        setupButton.textContent = 'Go to Setup';
+        setupButton.style.display = 'inline-block';
+        setupButton.style.marginTop = '20px';
+        setupButton.style.padding = '10px 20px';
+        setupButton.style.fontSize = '20px';
+        setupButton.style.fontWeight = 'bold';
+        setupButton.style.color = '#fff';
+        setupButton.style.backgroundColor = '#16a085';
+        setupButton.style.border = 'none';
+        setupButton.style.borderRadius = '5px';
+        setupButton.style.cursor = 'pointer';
+        setupButton.style.textDecoration = 'none';
+
+        setupButton.onmouseover = () => {
+            setupButton.style.backgroundColor = '#1abc9c';
+        };
+
+        setupButton.onmouseout = () => {
+            setupButton.style.backgroundColor = '#16a085';
+        };
+
+        document.body.appendChild(setupButton);
+    }
+
+    window.onload = () => {
+        initializeScoreboard();
+        connectWebSocket();
+    };
+</script>
+
+</body>
+</html>

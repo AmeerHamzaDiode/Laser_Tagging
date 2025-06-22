@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Setup</title>
+    <style>
+        /* General Styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #34495e, #2c3e50);
+            color: #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+            transform: scale(1);
+            transform-origin: top;
+        }
+
+        h1 {
+            margin-bottom: 12px;
+            font-size: 21.6px;
+            text-shadow: 1.2px 1.2px 2.4px rgba(0, 0, 0, 0.7);
+            color: #f39c12;
+        }
+
+        form {
+            width: 100%;
+            max-width: 800px;
+            background: #2c3e50;
+            padding: 12px;
+            border-radius: 4.8px;
+            box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .team-sections {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .team-section {
+            flex: 1;
+            margin-bottom: 12px;
+        }
+
+        .team-section h2 {
+            font-size: 16.8px;
+            margin-bottom: 6px;
+            color: #e74c3c;
+        }
+
+        .team-section h2.blue {
+            color: #3498db;
+        }
+
+        .player-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .player-item input[type="text"],
+        .player-item input[type="number"] {
+            flex: 1;
+            margin-left: 6px;
+            padding: 6px;
+            font-size: 16px;
+            border: 0.6px solid #bdc3c7;
+            border-radius: 3px;
+        }
+
+        .add-player-btn {
+            width: 100%;
+            padding: 6px 9px;
+            margin: 6px 0;
+            font-size: 9.6px;
+            font-weight: bold;
+            background-color: #1abc9c;
+            color: #2c3e50;
+            border: none;
+            border-radius: 4.8px;
+            cursor: pointer;
+        }
+
+        .add-player-btn:hover {
+            background-color: #16a085;
+        }
+
+        .start-btn {
+            display: block;
+            width: 100%;
+            padding: 9px;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            background-color: #f39c12;
+            color: #2c3e50;
+            border: none;
+            border-radius: 4.8px;
+            cursor: pointer;
+        }
+
+        .start-btn:hover {
+            background-color: #e67e22;
+        }
+
+        .id-status {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .id-status div {
+            flex: 1;
+            padding: 6px;
+            font-size: 9.6px;
+            background: #34495e;
+            border-radius: 4.8px;
+            text-align: center;
+            color: #ecf0f1;
+        }
+
+        .id-status div:not(:last-child) {
+            margin-right: 6px;
+        }
+
+        .id-status div span {
+            display: block;
+            margin-top: 3px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Game Setup</h1>
+    <div class="id-status">
+        <div>
+            Available IDs:
+            <span id="available-ids">1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12</span>
+        </div>
+        <div>
+            Used IDs:
+            <span id="used-ids">None</span>
+        </div>
+    </div>
+    <form id="game-setup-form">
+        <div class="team-sections">
+            <div class="team-section">
+                <h2>Team Red</h2>
+                <div class="player-list" id="red-team-list">
+                    <div class="player-item">
+                        <label for="red-player-1">Player 1:</label>
+                        <input type="text" id="red-player-1" placeholder="Enter name">
+                        <input type="number" id="red-player-id-1" placeholder="ID" min="1" max="12" onblur="validateID(this)">
+                    </div>
+                </div>
+                <button type="button" class="add-player-btn" onclick="addPlayer('red')">+ Add Player</button>
+            </div>
+            <div class="team-section">
+                <h2 class="blue">Team Blue</h2>
+                <div class="player-list" id="blue-team-list">
+                    <div class="player-item">
+                        <label for="blue-player-1">Player 1:</label>
+                        <input type="text" id="blue-player-1" placeholder="Enter name">
+                        <input type="number" id="blue-player-id-1" placeholder="ID" min="1" max="12" onblur="validateID(this)">
+                    </div>
+                </div>
+                <button type="button" class="add-player-btn" onclick="addPlayer('blue')">+ Add Player</button>
+            </div>
+        </div>
+        <button type="button" class="start-btn" onclick="startGame()">Start Game</button>
+    </form>
+
+    <script>
+        let availableIDs = Array.from({ length: 12 }, (_, i) => i + 1);
+        let usedIDs = [];
+
+        function updateIDLists() {
+            document.getElementById('available-ids').innerText = availableIDs.join(', ') || 'None';
+            document.getElementById('used-ids').innerText = usedIDs.join(', ') || 'None';
+        }
+
+        function validateID(input) {
+            const id = parseInt(input.value);
+            const previousValue = parseInt(input.getAttribute('data-prev-id'));
+
+            if (isNaN(id) || id < 1 || id > 12) {
+                alert("Invalid ID! Please choose a number between 1 and 12.");
+                input.value = '';
+                return;
+            }
+
+            if (id !== previousValue) {
+                if (previousValue && usedIDs.includes(previousValue)) {
+                    usedIDs.splice(usedIDs.indexOf(previousValue), 1);
+                    availableIDs.push(previousValue);
+                }
+
+                if (!availableIDs.includes(id)) {
+                    alert("ID already in use! Please choose another.");
+                    input.value = previousValue || '';
+                    return;
+                }
+
+                usedIDs.push(id);
+                availableIDs.splice(availableIDs.indexOf(id), 1);
+            }
+
+            input.setAttribute('data-prev-id', id);
+            updateIDLists();
+        }
+
+        function addPlayer(team) {
+            const teamList = document.getElementById(`${team}-team-list`);
+            const playerCount = teamList.children.length + 1;
+
+            const playerItem = document.createElement('div');
+            playerItem.className = 'player-item';
+            playerItem.innerHTML = `
+                <label for="${team}-player-${playerCount}">Player ${playerCount}:</label>
+                <input type="text" id="${team}-player-${playerCount}" placeholder="Enter name">
+                <input type="number" id="${team}-player-id-${playerCount}" placeholder="ID" min="1" max="12" onblur="validateID(this)">
+            `;
+
+            teamList.appendChild(playerItem);
+        }
+
+function startGame() {
+    const players = { red: [], blue: [] };
+
+    document.querySelectorAll('#red-team-list .player-item').forEach((item, i) => {
+        const name = item.querySelector(`#red-player-${i + 1}`).value;
+        const id = parseInt(item.querySelector(`#red-player-id-${i + 1}`).value);
+        if (name && id) players.red.push({ name, id });
+    });
+
+    document.querySelectorAll('#blue-team-list .player-item').forEach((item, i) => {
+        const name = item.querySelector(`#blue-player-${i + 1}`).value;
+        const id = parseInt(item.querySelector(`#blue-player-id-${i + 1}`).value);
+        if (name && id) players.blue.push({ name, id });
+    });
+
+    // Check if both teams have at least one player
+    if (players.red.length === 0) {
+        alert("Team Red must have at least one player.");
+        return;
+    }
+
+    if (players.blue.length === 0) {
+        alert("Team Blue must have at least one player.");
+        return;
+    }
+
+    const queryString = `players=${encodeURIComponent(JSON.stringify(players))}`;
+    window.location.href = `scoreboard.html?${queryString}`;
+}
+
+
+        updateIDLists();
+    </script>
+</body>
+</html>
